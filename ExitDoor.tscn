@@ -1,0 +1,28 @@
+[gd_scene load_steps=4 format=3 uid="uid://exituid"]
+
+[ext_resource type="Script" path="res://ExitDoor.gd" id="1_exit"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ed"]
+size = Vector3(6, 4, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ed"]
+size = Vector3(6, 4, 1)
+
+[node name="ExitDoor" type="StaticBody3D"]
+script = ExtResource("1_exit")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("BoxShape3D_ed")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+mesh = SubResource("BoxMesh_ed")
+
+[node name="WinArea" type="Area3D" parent="."]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WinArea"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("BoxShape3D_ed")
+
+[connection signal="body_entered" from="WinArea" to="." method="_on_win_area_body_entered"]

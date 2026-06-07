@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://cxl52j0h1jqy2"]
+
+[ext_resource type="Script" path="res://FlashlightPickup.gd" id="1_hx0q4"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_1"]
+top_radius = 0.05
+bottom_radius = 0.05
+height = 0.3
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1"]
+size = Vector3(0.5, 0.5, 0.5)
+
+[node name="FlashlightPickup" type="Area3D"]
+script = ExtResource("1_hx0q4")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
+mesh = SubResource("CylinderMesh_1")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_1")

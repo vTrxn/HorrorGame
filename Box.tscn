@@ -1,0 +1,26 @@
+[gd_scene load_steps=4 format=3 uid="uid://boxuid"]
+
+[ext_resource type="Script" path="res://Box.gd" id="1_box"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_bx"]
+size = Vector3(1, 1, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_bx"]
+size = Vector3(1, 1, 1)
+
+[node name="Box" type="StaticBody3D" groups=["boxes"]]
+script = ExtResource("1_box")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("BoxShape3D_bx")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+mesh = SubResource("BoxMesh_bx")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+light_color = Color(1, 0, 0, 1)
+light_energy = 2.0
+omni_range = 5.0

@@ -1,0 +1,27 @@
+[gd_scene load_steps=5 format=3 uid="uid://trashcanuid"]
+
+[ext_resource type="Script" path="res://TrashCan.gd" id="1_tc"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_tc"]
+height = 2.0
+radius = 0.8
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_tc"]
+top_radius = 0.8
+bottom_radius = 0.7
+height = 2.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tc"]
+albedo_color = Color(0.2, 0.4, 0.2, 1)
+
+[node name="TrashCan" type="StaticBody3D" groups=["trash_can"]]
+script = ExtResource("1_tc")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CylinderShape3D_tc")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("CylinderMesh_tc")
+surface_material_override/0 = SubResource("StandardMaterial3D_tc")

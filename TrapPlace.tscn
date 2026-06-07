@@ -1,0 +1,28 @@
+[gd_scene load_steps=4 format=3 uid="uid://trapuid"]
+
+[ext_resource type="Script" path="res://TrapPlace.gd" id="1_trap"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_tr"]
+size = Vector3(2, 0.4, 2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_tr"]
+size = Vector3(2, 0.1, 2)
+
+[node name="TrapPlace" type="StaticBody3D"]
+script = ExtResource("1_trap")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
+shape = SubResource("BoxShape3D_tr")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+mesh = SubResource("BoxMesh_tr")
+
+[node name="TriggerArea" type="Area3D" parent="."]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TriggerArea"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("BoxShape3D_tr")
+
+[connection signal="body_entered" from="TriggerArea" to="." method="_on_body_entered"]
