@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[node name="ScreenLight" type="OmniLight3D"]
+light_color = Color(0.627, 0.847, 1, 1)
+light_energy = 0.5
+omni_range = 4.0

@@ -1,0 +1,25 @@
+[gd_scene load_steps=5 format=3 uid="uid://dvw7lp7ckje5n"]
+
+[ext_resource type="Script" path="res://FixLightsBox.gd" id="1_script"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_light"]
+size = Vector3(1, 1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_light"]
+albedo_color = Color(1, 1, 1, 0.5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_light"]
+material = SubResource("StandardMaterial3D_light")
+size = Vector3(1, 1, 1)
+
+[node name="FixLightsBox" type="StaticBody3D" groups=["fix_lights"]]
+collision_layer = 1
+collision_mask = 1
+script = ExtResource("1_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_light")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+visible = false
+mesh = SubResource("BoxMesh_light")

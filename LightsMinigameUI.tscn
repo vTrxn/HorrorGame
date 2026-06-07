@@ -1,0 +1,76 @@
+[gd_scene load_steps=2 format=3 uid="uid://lights_minigame_ui_x"]
+
+[ext_resource type="Script" path="res://LightsMinigameUI.gd" id="1_script"]
+
+[node name="LightsMinigameUI" type="CanvasLayer"]
+layer = 100
+script = ExtResource("1_script")
+
+[node name="Panel" type="Panel" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -150.0
+offset_right = 250.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Title" type="Label" parent="Panel/VBoxContainer"]
+layout_mode = 2
+text = "Arreglar Luces"
+horizontal_alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+theme_override_constants/separation = 20
+
+[node name="Switch0" type="Button" parent="Panel/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(60, 150)
+layout_mode = 2
+size_flags_vertical = 4
+text = "OFF"
+
+[node name="Switch1" type="Button" parent="Panel/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(60, 150)
+layout_mode = 2
+size_flags_vertical = 4
+text = "OFF"
+
+[node name="Switch2" type="Button" parent="Panel/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(60, 150)
+layout_mode = 2
+size_flags_vertical = 4
+text = "OFF"
+
+[node name="Switch3" type="Button" parent="Panel/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(60, 150)
+layout_mode = 2
+size_flags_vertical = 4
+text = "OFF"
+
+[node name="Switch4" type="Button" parent="Panel/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(60, 150)
+layout_mode = 2
+size_flags_vertical = 4
+text = "OFF"
+
+[node name="CloseButton" type="Button" parent="Panel/VBoxContainer"]
+layout_mode = 2
+text = "Cerrar"
+
+[connection signal="pressed" from="Panel/VBoxContainer/CloseButton" to="." method="_on_close_button_pressed"]
