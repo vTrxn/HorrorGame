@@ -3,11 +3,13 @@
 [ext_resource type="Script" uid="uid://b47v401hm2f0p" path="res://World.gd" id="1_world"]
 [ext_resource type="PackedScene" uid="uid://qve0sa2ydfa8" path="res://EmergencyButton.tscn" id="4_p1v5b"]
 [ext_resource type="PackedScene" uid="uid://wiresbox" path="res://WiresBox.tscn" id="5_eu7l1"]
+[ext_resource type="PackedScene" uid="uid://ventbox" path="res://Vent.tscn" id="6_kva58"]
 [ext_resource type="PackedScene" uid="uid://pauseuid" path="res://PauseMenu.tscn" id="7_pause"]
 [ext_resource type="PackedScene" uid="uid://dvw7lp7ckje5n" path="res://FixLightsBox.tscn" id="7_wygdx"]
 [ext_resource type="PackedScene" path="res://DownloadBox.tscn" id="8_fv4w7"]
 [ext_resource type="PackedScene" path="res://UploadBox.tscn" id="9_fvag4"]
 [ext_resource type="PackedScene" uid="uid://survivoruid" path="res://Survivor.tscn" id="9_survivor"]
+[ext_resource type="PackedScene" uid="uid://circuitbox" path="res://CircuitBox.tscn" id="10_fvag4"]
 [ext_resource type="PackedScene" uid="uid://8pagla7jrkno" path="res://Map.glb" id="17_map"]
 
 [node name="World" type="Node3D" unique_id=1003520969]
@@ -29,7 +31,28 @@ spawn_path = NodePath("../Players")
 use_collision = true
 
 [node name="Map" parent="Environment" unique_id=2088655835 instance=ExtResource("17_map")]
-transform = Transform3D(25, 0, 0, 0, 25, 0, 0, 0, 25, -135.3214, 1.6634398, 109.73207)
+transform = Transform3D(25, 0, 0, 0, 25, 0, 0, 0, 25, -135.38141, 1.7978067, 109.81575)
+
+[node name="DownloadBox" parent="Environment" unique_id=213251897 instance=ExtResource("8_fv4w7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.0716057, 3.703802, -0.41813785)
+task_id = 2
+
+[node name="UploadBox" parent="Environment" unique_id=84804034 instance=ExtResource("9_fvag4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 65.6256, 3.1312044, 32.127167)
+task_id = 2
+
+[node name="Vent" parent="Environment" unique_id=1646840853 instance=ExtResource("6_kva58")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.250739, 1.8891236, 22.442776)
+
+[node name="Vent2" parent="Environment" unique_id=1271960994 instance=ExtResource("6_kva58")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.031575, 1.8671017, 68.08535)
+vent_id = "B"
+connected_vents = Array[String](["A", "C"])
+
+[node name="Vent3" parent="Environment" unique_id=1746111302 instance=ExtResource("6_kva58")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.328243, 1.9936676, 48.69938)
+vent_id = "C"
+connected_vents = Array[String](["A", "B"])
 
 [node name="Lighting" type="DirectionalLight3D" parent="." unique_id=178378341]
 transform = Transform3D(0.7071068, -0.49999994, 0.5000001, 0, 0.70710695, 0.7071067, -0.7071068, -0.49999994, 0.5000001, -25.420511, 31.142859, 19.222666)
@@ -53,7 +76,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25.291138, -1.6908367, -5.17
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -85.99401, 4.0376534, 42.744568)
 
 [node name="WiresBox" parent="WiresBox2" unique_id=1003530911 instance=ExtResource("5_eu7l1")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 46.928307, -0.24617243, -46.251537)
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 46.369404, -0.24617267, -46.662197)
 
 [node name="WiresBox3" parent="." unique_id=37077690 instance=ExtResource("5_eu7l1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 51.67837, 4.3179393, 39.12078)
@@ -69,3 +92,34 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.0789828, 3.8809, 49.05682)
 
 [node name="UploadBox" parent="." unique_id=1621638196 instance=ExtResource("9_fvag4")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -59.47262, 3.2981875, 53.604004)
+
+[node name="CircuitBox" parent="." unique_id=562064972 instance=ExtResource("10_fvag4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -55.960453, 3.215047, 53.7927)
+
+[node name="CircuitBox2" parent="." unique_id=779812764 instance=ExtResource("10_fvag4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -107.73973, 3.6362312, 34.176323)
+
+[node name="CircuitBox3" parent="." unique_id=351858583 instance=ExtResource("10_fvag4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60.35046, 3.246868, 32.189842)
+
+[node name="CircuitBox4" parent="." unique_id=1543191217 instance=ExtResource("10_fvag4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 36.70033, 3.7247388, 66.67376)
+
+[node name="CircuitBox5" parent="." unique_id=685402986 instance=ExtResource("10_fvag4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.549268, 3.9039245, 85.58492)
+
+[node name="CircuitBox6" parent="." unique_id=1780169895 instance=ExtResource("10_fvag4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 38.542847, 3.6832194, 11.741098)
+
+[node name="DownloadBox2" parent="." unique_id=1588271171 instance=ExtResource("8_fv4w7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.3406448, 3.615219, -2.1794128)
+
+[node name="Vent" parent="." unique_id=406049394 instance=ExtResource("6_kva58")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25.946812, 1.937213, 3.8726249)
+vent_id = "I"
+connected_vents = Array[String](["O"])
+
+[node name="Vent2" parent="." unique_id=2137422438 instance=ExtResource("6_kva58")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60.735123, 1.9632516, 34.12636)
+vent_id = "O"
+connected_vents = Array[String](["I"])

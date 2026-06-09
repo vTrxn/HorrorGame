@@ -25,13 +25,26 @@ func _ready():
 	if map:
 		_create_collision(map)
 		
-	var test_dummy = $Players.get_node_or_null("TestDummy")
-	if test_dummy:
-		test_dummy.global_position = $SpawnLocation.global_position
+	# Para pruebas locales si ejecutamos la escena World directo
+	if get_tree().current_scene == self:
+		var test_player = beast_scene.instantiate()
+		test_player.name = "1"
+		$Players.add_child(test_player)
+		test_player.set_multiplayer_authority(multiplayer.get_unique_id())
+		test_player.global_position = $SpawnLocation.global_position
 		
-	for node in $Boxes.get_children():
-		total_boxes += 1
-	print("Total boxes to fix: ", total_boxes)
+		var test_dummy = survivor_scene.instantiate()
+		test_dummy.name = "TestDummy"
+		add_child(test_dummy)
+		test_dummy.global_position = $SpawnLocation.global_position + Vector3(0, 0, -2)
+		test_dummy.rotation.y = PI
+		test_dummy.set_multiplayer_authority(9999)
+		if test_dummy.has_method("set_player_color"):
+			test_dummy.set_player_color(1)
+	
+
+	total_boxes = _count_tasks(self)
+	print("Total tasks found in map: ", total_boxes)
 	
 	var cg = Node3D.new()
 	cg.set_script(load("res://CeilingGenerator.gd"))
@@ -59,7 +72,20 @@ func _create_collision(node: Node):
 		_create_collision(child)
 
 
-func spawn_player(peer_id: int, role: int):
+var player_colors = {}
+
+func spawn_player(peer_id: int, role: int, requested_color: int = 0):
+	var assigned_color = requested_color
+	if multiplayer.is_server():
+		# Asegurar color único
+		var used_colors = player_colors.values()
+		if assigned_color in used_colors:
+			for i in range(8):
+				if not (i in used_colors):
+					assigned_color = i
+					break
+		player_colors[peer_id] = assigned_color
+	
 	var player
 	if role == 0:
 		player = survivor_scene.instantiate()
@@ -70,27 +96,72 @@ func spawn_player(peer_id: int, role: int):
 	var spawn_pos = $SpawnLocation.global_position
 	player.global_position = Vector3(spawn_pos.x + randf_range(-2, 2), spawn_pos.y, spawn_pos.z + randf_range(-2, 2))
 
+	if multiplayer.is_server():
+		sync_player_color.rpc(peer_id, assigned_color)
+		
+		# Enviar a este nuevo jugador los colores de los demás
+		for pid in player_colors:
+			if pid != peer_id:
+				sync_player_color.rpc_id(peer_id, pid, player_colors[pid])
+		
+		# Recalcular las tareas totales necesarias
+		call_deferred("recalc_tasks")
+
+@rpc("call_local", "reliable")
+func sync_player_color(peer_id: int, color_idx: int):
+	player_colors[peer_id] = color_idx
+	var player = $Players.get_node_or_null(str(peer_id))
+	if player and player.has_method("set_player_color"):
+		player.set_player_color(color_idx)
+
+const TASKS_PER_SURVIVOR = 4
+var total_required_tasks = 1
+
 func remove_player(peer_id: int):
+	player_colors.erase(peer_id)
 	var node = $Players.get_node_or_null(str(peer_id))
 	if node:
 		node.queue_free()
+	if multiplayer.is_server():
+		call_deferred("recalc_tasks")
 
+func recalc_tasks():
+	var num_survivors = 0
+	for p in $Players.get_children():
+		if "is_beast" in p and not p.is_beast:
+			num_survivors += 1
+	
+	if num_survivors == 0:
+		num_survivors = 1 # Prevenir división por cero si no hay tripulantes
+		
+	total_required_tasks = min(num_survivors * TASKS_PER_SURVIVOR, total_boxes)
+	if total_required_tasks < 1:
+		total_required_tasks = 1
+		
+	update_task_progress.rpc(fixed_boxes, total_required_tasks)
+	
+	if fixed_boxes >= total_required_tasks:
+		open_doors.rpc()
+
+@rpc("any_peer", "call_local")
 func box_fixed():
 	fixed_boxes += 1
-	print("Box fixed! ", fixed_boxes, "/", total_boxes)
-	update_task_progress.rpc(fixed_boxes, total_boxes)
-	if fixed_boxes >= total_boxes:
-		open_doors.rpc()
+	print("Box fixed! ", fixed_boxes, "/", total_required_tasks)
+	if multiplayer.is_server():
+		update_task_progress.rpc(fixed_boxes, total_required_tasks)
+		if fixed_boxes >= total_required_tasks:
+			open_doors.rpc()
 
 func box_broken():
 	fixed_boxes -= 1
-	print("Box broken! ", fixed_boxes, "/", total_boxes)
-	update_task_progress.rpc(fixed_boxes, total_boxes)
+	print("Box broken! ", fixed_boxes, "/", total_required_tasks)
+	if multiplayer.is_server():
+		update_task_progress.rpc(fixed_boxes, total_required_tasks)
 
 @rpc("call_local", "reliable")
 func update_task_progress(fixed: int, total: int):
 	fixed_boxes = fixed
-	total_boxes = total
+	total_required_tasks = total
 	for p in $Players.get_children():
 		if p.has_method("is_local_player") and p.is_local_player() and p.has_method("update_task_ui"):
 			p.update_task_ui(fixed, total)
@@ -100,7 +171,15 @@ func open_doors():
 	print("Doors opened!")
 	var exit_door = $ExitDoor
 	if exit_door:
-		exit_door.open()
+		exit_door.queue_free()
+
+func _count_tasks(node: Node) -> int:
+	var count = 0
+	for child in node.get_children():
+		if child.has_method("boost_hack") or child.has_method("start_hack"):
+			count += 1
+		count += _count_tasks(child)
+	return count
 
 var meeting_ui_instance = null
 

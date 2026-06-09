@@ -9,7 +9,6 @@ var stamina: float = 100.0
 var max_stamina: float = 100.0
 var stamina_bar: ColorRect
 var is_crouching: bool = false
-var is_jumping_slow: bool = false
 var in_minigame: bool = false
 var map_ui = null
 
@@ -20,10 +19,15 @@ var look_sensitivity = 0.002
 @onready var camera = $Camera3D
 @onready var raycast = $Camera3D/RayCast3D
 @onready var body = $Body
-@onready var head = $Body/Head
-@onready var torso = $Body/Torso
+
+# Referencias para las mallas originales
+@onready var head_mesh = $Body/Head
+@onready var torso_mesh = $Body/Torso
 @onready var hand_l = $Body/HandL
 @onready var hand_r = $Body/HandR
+
+@export var player_color_index: int = 0
+var bobbing_time = 0.0
 
 var is_hacking = false
 var current_hack_target = null
@@ -81,28 +85,23 @@ func _enter_tree():
 func is_local_player() -> bool:
 	return str(name) == str(multiplayer.get_unique_id())
 
-func create_face_part(pos: Vector3, size: Vector3, rot_z: float, black_mat: StandardMaterial3D):
-	var mesh = BoxMesh.new()
-	mesh.size = size
-	var mi = MeshInstance3D.new()
-	mi.mesh = mesh
-	mi.material_override = black_mat
-	mi.position = pos
-	mi.rotation.z = rot_z
-	head.add_child(mi)
-
 func _ready():
-	# Crear carita feliz
-	var black_mat = StandardMaterial3D.new()
-	black_mat.albedo_color = Color(0, 0, 0)
+	# Generar cara feliz usando Sprite3D (o Decal si estuviera disponible, pero Sprite3D es más simple)
+	var face_sprite = Sprite3D.new()
+	face_sprite.texture = load("res://happy_face.png")
+	face_sprite.pixel_size = 0.003
+	face_sprite.position = Vector3(0, 0, -0.41) # Ligeramente frente a la esfera de la cabeza
+	if head_mesh:
+		head_mesh.add_child(face_sprite)
+		
+	# Eliminar el pelo ya que no se pidió
+	var hair = body.get_node_or_null("Head/Hair")
+	if hair: hair.queue_free()
 	
-	var z = -0.51 if is_beast else -0.41
+	if is_multiplayer_authority():
+		# Pedir nuestro color
+		pass
 	
-	create_face_part(Vector3(-0.15, 0.1, z + 0.04), Vector3(0.08, 0.08, 0.05), 0.0, black_mat)
-	create_face_part(Vector3(0.15, 0.1, z + 0.04), Vector3(0.08, 0.08, 0.05), 0.0, black_mat)
-	create_face_part(Vector3(0, -0.1, z + 0.02), Vector3(0.15, 0.04, 0.05), 0.0, black_mat)
-	create_face_part(Vector3(-0.09, -0.06, z + 0.03), Vector3(0.08, 0.04, 0.05), deg_to_rad(-30.0), black_mat)
-	create_face_part(Vector3(0.09, -0.06, z + 0.03), Vector3(0.08, 0.04, 0.05), deg_to_rad(30.0), black_mat)
 	if camera.has_node("Flashlight"):
 		flashlight = camera.get_node("Flashlight")
 		has_flashlight = true
@@ -111,11 +110,6 @@ func _ready():
 		flashlight.spot_angle = 45.0
 
 	if is_beast:
-		var mat = StandardMaterial3D.new()
-		mat.albedo_color = Color(0.5, 0, 0)
-		torso.material_override = mat
-		head.material_override = mat
-		
 		if not has_flashlight:
 			has_flashlight = true
 			flashlight = SpotLight3D.new()
@@ -125,13 +119,29 @@ func _ready():
 			flashlight.spot_range = 25.0
 			flashlight.spot_angle = 45.0
 			flashlight.shadow_enabled = true
-			add_child(flashlight)
+			camera.add_child(flashlight)
 	
 	if is_local_player():
 		camera.current = true
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		
-		head.visible = false
+		# Solo ocultamos el Torso y Head localmente (shadows_only) para no bloquear la vista
+		# Dejamos las manos visibles para el efecto de correr
+		if torso_mesh:
+			torso_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+		if head_mesh:
+			head_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+			
+		# Mover las manos para que sigan a la cámara en primera persona
+		if hand_l and hand_r:
+			var orig_l = hand_l.global_transform
+			var orig_r = hand_r.global_transform
+			hand_l.get_parent().remove_child(hand_l)
+			hand_r.get_parent().remove_child(hand_r)
+			camera.add_child(hand_l)
+			camera.add_child(hand_r)
+			hand_l.position = Vector3(-0.4, -0.4, -0.7)
+			hand_r.position = Vector3(0.4, -0.4, -0.7)
 		
 		if is_beast:
 			var canvas = CanvasLayer.new()
@@ -152,15 +162,6 @@ func _ready():
 		else:
 			map_ui = load("res://MapOverlayUI.tscn").instantiate()
 			add_child(map_ui)
-		
-		torso.visible = false
-		hand_l.get_parent().remove_child(hand_l)
-		camera.add_child(hand_l)
-		hand_l.position = Vector3(-0.4, -0.4, -0.6)
-		
-		hand_r.get_parent().remove_child(hand_r)
-		camera.add_child(hand_r)
-		hand_r.position = Vector3(0.4, -0.4, -0.6)
 		
 		var env = Environment.new()
 		
@@ -338,6 +339,52 @@ void fragment() {
 	else:
 		camera.current = false
 
+var colors = [Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW, Color(1, 0.5, 0), Color.PURPLE, Color.CYAN, Color.DEEP_PINK]
+
+@rpc("call_local", "reliable")
+func set_player_color(idx: int):
+	player_color_index = idx
+	var c = colors[idx % colors.size()]
+	var mat = StandardMaterial3D.new()
+	mat.albedo_color = c
+	if torso_mesh: torso_mesh.set_surface_override_material(0, mat)
+	if head_mesh: head_mesh.set_surface_override_material(0, mat)
+	if hand_l: hand_l.set_surface_override_material(0, mat)
+	if hand_r: hand_r.set_surface_override_material(0, mat)
+
+func _setup_materials_and_shadows():
+	if is_beast:
+		_tint_red(torso_mesh)
+		_tint_red(head_mesh)
+		_tint_red(hand_l)
+		_tint_red(hand_r)
+
+func _tint_red(node: Node):
+	if node is MeshInstance3D:
+		var count = node.get_surface_override_material_count()
+		for i in range(node.mesh.get_surface_count()):
+			var mat = node.mesh.surface_get_material(i)
+			if mat and mat is StandardMaterial3D:
+				var new_mat = mat.duplicate()
+				new_mat.albedo_color = Color(1.0, 0.2, 0.2)
+				node.set_surface_override_material(i, new_mat)
+	for c in node.get_children():
+		_tint_red(c)
+
+func _set_shadow_only(node: Node):
+	if node is MeshInstance3D:
+		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+	for c in node.get_children():
+		_set_shadow_only(c)
+
+var current_anim = "idle"
+func play_animation(anim_type: String):
+	pass # Animaciones eliminadas
+
+@rpc("call_local", "any_peer")
+func _play_anim_sync(anim_type: String):
+	pass
+
 func _input(event):
 	if not is_local_player() or (is_dead and not is_ghost) or is_knocked_out or in_minigame: return
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
@@ -386,26 +433,9 @@ func _physics_process(delta):
 					pm.toggle()
 
 	if not is_multiplayer_authority():
-		# Animación remota
+		# Animación remota controlada por _play_anim_sync, solo interpolar posición y rotación
 		if not is_knocked_out:
 			rotation.z = lerp(rotation.z, 0.0, delta * 5)
-		
-		var h_vel = Vector2(velocity.x, velocity.z)
-		if is_attacking:
-			attack_anim_time += delta * 15.0
-			hand_l.position.z = -0.6 - sin(attack_anim_time) * 0.5
-			hand_r.position.z = -0.6 - sin(attack_anim_time) * 0.5
-			if attack_anim_time > PI:
-				is_attacking = false
-		elif h_vel.length() > 0.1:
-			walk_anim_time += delta * 10.0
-			hand_l.position.y = 1.0 + sin(walk_anim_time) * 0.2
-			hand_l.position.z = sin(walk_anim_time) * 0.4
-			hand_r.position.y = 1.0 + sin(walk_anim_time + PI) * 0.2
-			hand_r.position.z = sin(walk_anim_time + PI) * 0.4
-		else:
-			hand_l.position = hand_l.position.lerp(Vector3(-0.6, 1.0, 0), delta * 5)
-			hand_r.position = hand_r.position.lerp(Vector3(0.6, 1.0, 0), delta * 5)
 		return
 
 	if hud_canvas:
@@ -421,14 +451,22 @@ func _physics_process(delta):
 		move_and_slide()
 		return
 
+	if in_minigame:
+		velocity.x = 0
+		velocity.z = 0
+		if footstep_player and footstep_player.playing:
+			footstep_player.stop()
+		move_and_slide()
+		return
+
 	rotation.z = lerp(rotation.z, 0.0, delta * 5)
 
 	var current_speed = speed
-	if is_jumping_slow:
-		current_speed *= 0.5
-		
 	if not is_on_floor():
 		velocity.y -= gravity * delta
+	else:
+		if not is_beast and is_local_player() and not in_minigame and Input.is_action_just_pressed("ui_accept"):
+			velocity.y = 4.5
 
 	# Fallback si se caen del mapa
 	if global_position.y < -50:
@@ -448,13 +486,6 @@ func _physics_process(delta):
 		if Input.is_key_pressed(KEY_A): input_x -= 1
 		if Input.is_key_pressed(KEY_D): input_x += 1
 	var input_dir = Vector2(input_x, input_y).normalized()
-	
-	if is_on_floor():
-		is_jumping_slow = false
-
-	if is_local_player() and Input.is_key_pressed(KEY_SPACE) and is_on_floor() and not is_crouching and not in_minigame:
-		velocity.y = JUMP_VELOCITY
-		is_jumping_slow = true
 	
 	is_crouching = false
 	if is_local_player() and not in_minigame:
@@ -485,6 +516,24 @@ func _physics_process(delta):
 	else:
 		velocity.x = move_toward(velocity.x, 0, current_speed)
 		velocity.z = move_toward(velocity.z, 0, current_speed)
+
+	# Efecto Bobbing
+	if is_local_player() and is_on_floor() and direction.length() > 0:
+		bobbing_time += delta * current_speed * 1.5
+		
+		# Mover solo las manos simulando que camina
+		if hand_l and hand_r:
+			hand_l.position.y = -0.4 + sin(bobbing_time) * 0.1
+			hand_l.position.z = -0.7 + cos(bobbing_time) * 0.2
+			hand_r.position.y = -0.4 + sin(bobbing_time + PI) * 0.1
+			hand_r.position.z = -0.7 + cos(bobbing_time + PI) * 0.2
+	elif is_local_player():
+		bobbing_time = 0.0
+		if hand_l and hand_r:
+			hand_l.position.y = lerp(hand_l.position.y, -0.4, delta * 5)
+			hand_l.position.z = lerp(hand_l.position.z, -0.7, delta * 5)
+			hand_r.position.y = lerp(hand_r.position.y, -0.4, delta * 5)
+			hand_r.position.z = lerp(hand_r.position.z, -0.7, delta * 5)
 
 	move_and_slide()
 	
@@ -550,25 +599,15 @@ func _physics_process(delta):
 		fail_skill_check()
 
 	if is_attacking:
-		attack_anim_time += delta * 15.0
-		hand_l.position = Vector3(-0.4, -0.4, -0.6 - sin(attack_anim_time)*0.5)
-		hand_r.position = Vector3(0.4, -0.4, -0.6 - sin(attack_anim_time)*0.5)
-		if attack_anim_time > PI:
-			is_attacking = false
+		pass # Aquí podrías llamar una animación de ataque si existe
 	elif is_hacking:
-		hack_anim_time += delta * 15.0
-		hand_l.position = Vector3(-0.2 + sin(hack_anim_time)*0.1, -0.2, -0.6)
-		hand_r.position = Vector3(0.2 + cos(hack_anim_time)*0.1, -0.2, -0.6)
+		pass
 		if not raycast.is_colliding() or raycast.get_collider() != current_hack_target:
 			if current_hack_target:
 				current_hack_target.stop_hack.rpc_id(1, is_beast)
 			current_hack_target = null
 			is_hacking = false
 	elif h_vel.length() > 0.1:
-		walk_anim_time += delta * 10.0
-		hand_l.position.y = -0.4 + sin(walk_anim_time) * 0.1
-		hand_r.position.y = -0.4 + sin(walk_anim_time + PI) * 0.1
-		
 		if h_vel.length() > 5.0 and is_on_floor():
 			if footstep_player:
 				if h_vel.length() > 10.0:
@@ -582,8 +621,6 @@ func _physics_process(delta):
 			if footstep_player and footstep_player.playing:
 				footstep_player.stop()
 	else:
-		hand_l.position = hand_l.position.lerp(Vector3(-0.4, -0.4, -0.6), delta * 5)
-		hand_r.position = hand_r.position.lerp(Vector3(0.4, -0.4, -0.6), delta * 5)
 		if footstep_player and footstep_player.playing:
 			footstep_player.stop()
 
@@ -605,6 +642,10 @@ func _physics_process(delta):
 					if interact_just_pressed and not is_hacking:
 						target.start_hack.rpc_id(1, is_beast)
 						beast_handled_interact = true
+				elif "Vent" in target.name or target.is_in_group("vents"):
+					e_action = "E: Entrar a Tubería"
+					if interact_just_pressed and not is_hacking and not in_minigame:
+						start_vent(target)
 			else:
 				if target.is_in_group("download_tasks") or ("Download" in target.name):
 					var tid = target.get("task_id") if target.get("task_id") != null else 0
@@ -632,6 +673,15 @@ func _physics_process(delta):
 						e_action = "E: Conectar Cables"
 						if interact_just_pressed and not is_hacking and not in_minigame:
 							start_wires_minigame(target)
+				
+				elif "CircuitBox" in target.name or target.is_in_group("circuit"):
+					if "is_completed" in target and target.is_completed:
+						e_action = "Completado"
+					else:
+						e_action = "E: Conectar Circuito"
+						if interact_just_pressed and not is_hacking and not in_minigame:
+							start_circuit_minigame(target)
+							
 				elif target.has_method("start_hack") and "FixLightsBox" in target.name:
 					e_action = "E: Arreglar Luces"
 					if interact_just_pressed and not is_hacking and not in_minigame:
@@ -757,7 +807,10 @@ func do_attack():
 @rpc("any_peer", "call_local")
 func get_knocked_out():
 	is_knocked_out = true
-	rotation_degrees.z = 90
+	# rotation_degrees.z = 90  # Ya no lo rotamos físicamente, usamos la animación
+	play_animation("up") # la animación de levantarse o "die" según lo configurado en _get_anim_name
+	_play_anim_sync("die") # Forzamos el pause en 0 para morir
+	
 	var kill_audio = AudioStreamPlayer3D.new()
 	var stream = load("res://kill_sound.mp3")
 	if stream:
@@ -771,8 +824,6 @@ func get_knocked_out():
 		if is_hacking and current_hack_target:
 			current_hack_target.stop_hack.rpc_id(1, is_beast)
 			current_hack_target = null
-			is_hacking = false
-
 			is_hacking = false
 
 @rpc("any_peer", "call_local")
@@ -814,9 +865,39 @@ func _on_wires_completed(target_box):
 	in_minigame = false
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	if target_box:
-		target_box.boost_hack.rpc_id(1, 100.0)
+		target_box.is_completed = true
+		var world = get_tree().root.get_node_or_null("World")
+		if world and world.has_method("box_fixed"):
+			if multiplayer.is_server():
+				world.box_fixed()
+			else:
+				world.rpc_id(1, "box_fixed")
 
 func _on_wires_closed():
+	in_minigame = false
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+func start_circuit_minigame(target_box):
+	in_minigame = true
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	var ui = load("res://CircuitMinigameUI.tscn").instantiate()
+	ui.connect("minigame_completed", Callable(self, "_on_circuit_completed").bind(target_box))
+	ui.connect("minigame_closed", Callable(self, "_on_circuit_closed"))
+	get_tree().root.add_child(ui)
+
+func _on_circuit_completed(target_box):
+	in_minigame = false
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	if target_box:
+		target_box.is_completed = true
+		var world = get_tree().root.get_node_or_null("World")
+		if world and world.has_method("box_fixed"):
+			if multiplayer.is_server():
+				world.box_fixed()
+			else:
+				world.rpc_id(1, "box_fixed")
+
+func _on_circuit_closed():
 	in_minigame = false
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -831,11 +912,62 @@ func start_lights_minigame(target_box):
 func _on_lights_completed(target_box):
 	in_minigame = false
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	target_box.start_hack.rpc_id(1, is_beast)
+	if target_box:
+		target_box.is_completed = true
+		var world = get_tree().root.get_node_or_null("World")
+		if world and world.has_method("box_fixed"):
+			if multiplayer.is_server():
+				world.box_fixed()
+			else:
+				world.rpc_id(1, "box_fixed")
 
 func _on_lights_closed():
 	in_minigame = false
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+func start_vent(target_vent):
+	in_minigame = true
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	
+	play_vent_sound()
+	
+	var ui = load("res://VentMenuUI.tscn").instantiate()
+	ui.setup(target_vent)
+	ui.connect("vent_selected", Callable(self, "_on_vent_selected"))
+	ui.connect("menu_closed", Callable(self, "_on_vent_closed"))
+	get_tree().root.add_child(ui)
+
+func play_vent_sound():
+	var audio = AudioStreamPlayer3D.new()
+	var stream = load("res://vent-in.mp3")
+	if stream:
+		if stream is AudioStreamMP3:
+			stream.loop = false
+		audio.stream = stream
+		audio.bus = "ReverbBus"
+		add_child(audio)
+		audio.play()
+		audio.finished.connect(audio.queue_free)
+
+func _on_vent_selected(dest_id):
+	var vents = get_tree().get_nodes_in_group("vents")
+	for v in vents:
+		if v.get("vent_id") == dest_id:
+			global_position = v.global_position + Vector3(0, 1, 0)
+			break
+	_on_vent_closed()
+
+func _on_vent_closed():
+	in_minigame = false
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	play_vent_sound()
+
+@rpc("any_peer", "call_local")
+func set_player_visible(v: bool):
+	if torso_mesh: torso_mesh.visible = v
+	if head_mesh: head_mesh.visible = v
+	if hand_l: hand_l.visible = v
+	if hand_r: hand_r.visible = v
 
 func start_data_minigame(target_box, is_upload):
 	in_minigame = true
@@ -851,8 +983,14 @@ func _on_data_completed(target_box, is_upload):
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	if is_upload:
 		downloaded_task_id = -1
-		if target_box and target_box.has_method("start_hack"):
-			target_box.start_hack.rpc_id(1, is_beast)
+		if target_box:
+			target_box.is_completed = true
+			var world = get_tree().root.get_node_or_null("World")
+			if world and world.has_method("box_fixed"):
+				if multiplayer.is_server():
+					world.box_fixed()
+				else:
+					world.rpc_id(1, "box_fixed")
 	else:
 		if target_box:
 			downloaded_task_id = target_box.get("task_id") if target_box.get("task_id") != null else 0
@@ -876,7 +1014,20 @@ func make_ghost():
 	collision_mask = 1
 	if is_local_player():
 		print("I am now a ghost!")
-		if hand_l and "transparency" in hand_l:
-			hand_l.transparency = 0.7
-		if hand_r and "transparency" in hand_r:
-			hand_r.transparency = 0.7
+		if torso_mesh: _make_transparent(torso_mesh)
+		if head_mesh: _make_transparent(head_mesh)
+		if hand_l: _make_transparent(hand_l)
+		if hand_r: _make_transparent(hand_r)
+
+func _make_transparent(node: Node):
+	if node is MeshInstance3D:
+		var count = node.get_surface_override_material_count()
+		for i in range(node.mesh.get_surface_count()):
+			var mat = node.mesh.surface_get_material(i)
+			if mat and mat is StandardMaterial3D:
+				var new_mat = mat.duplicate()
+				new_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+				new_mat.albedo_color.a = 0.3
+				node.set_surface_override_material(i, new_mat)
+	for c in node.get_children():
+		_make_transparent(c)
