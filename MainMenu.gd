@@ -64,4 +64,11 @@ func _on_join_pressed():
 	var ip = ip_line_edit.text
 	if ip == "":
 		ip = "127.0.0.1"
-	MultiplayerManager.join_game(role_option.selected, color_option.selected, ip)
+		
+	var port = 7000
+	if ":" in ip:
+		var parts = ip.split(":")
+		ip = parts[0]
+		port = int(parts[1])
+		
+	MultiplayerManager.join_game(role_option.selected, color_option.selected, ip, port)

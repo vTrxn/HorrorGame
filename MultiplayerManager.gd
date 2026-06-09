@@ -36,10 +36,10 @@ func host_game(role: int, color_index: int = 0):
 	if world:
 		world.spawn_player(1, local_role, local_color_index)
 
-func join_game(role: int, color_index: int = 0, ip: String = DEFAULT_SERVER_IP):
+func join_game(role: int, color_index: int = 0, ip: String = DEFAULT_SERVER_IP, custom_port: int = PORT):
 	local_role = role
 	local_color_index = color_index
-	enet_peer.create_client(ip, PORT)
+	enet_peer.create_client(ip, custom_port)
 	multiplayer.multiplayer_peer = enet_peer
 	load_world()
 
