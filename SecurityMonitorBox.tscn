@@ -1,0 +1,24 @@
+[gd_scene load_steps=5 format=3 uid="uid://sec_mon_box"]
+
+[ext_resource type="Script" path="res://SecurityMonitorBox.gd" id="1_script"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_sec"]
+size = Vector3(2, 2, 2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sec"]
+albedo_color = Color(0.2, 0.8, 0.2, 0.5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_sec"]
+material = SubResource("StandardMaterial3D_sec")
+size = Vector3(1, 1, 1)
+
+[node name="SecurityMonitorBox" type="StaticBody3D" groups=["security_monitors"]]
+collision_layer = 1
+collision_mask = 1
+script = ExtResource("1_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_sec")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_sec")

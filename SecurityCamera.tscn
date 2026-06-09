@@ -1,0 +1,46 @@
+[gd_scene load_steps=5 format=3 uid="uid://sec_cam_node"]
+
+[ext_resource type="Script" path="res://SecurityCamera.gd" id="1_script"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_body"]
+size = Vector3(0.4, 0.4, 0.6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cam"]
+albedo_color = Color(0.1, 0.1, 0.1, 1)
+metallic = 0.8
+roughness = 0.2
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_lens"]
+top_radius = 0.15
+bottom_radius = 0.15
+height = 0.3
+
+[node name="SecurityCamera" type="Node3D" groups=["security_cameras"]]
+script = ExtResource("1_script")
+
+[node name="BodyMesh" type="MeshInstance3D" parent="."]
+layers = 2
+mesh = SubResource("BoxMesh_body")
+surface_material_override/0 = SubResource("StandardMaterial3D_cam")
+
+[node name="LensMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, -0.45)
+layers = 2
+mesh = SubResource("CylinderMesh_lens")
+surface_material_override/0 = SubResource("StandardMaterial3D_cam")
+
+[node name="SpotLight3D" type="SpotLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.6)
+visible = false
+light_color = Color(1, 1, 1, 1)
+light_energy = 15.0
+spot_range = 40.0
+spot_angle = 45.0
+shadow_enabled = true
+
+[node name="SubViewport" type="SubViewport" parent="."]
+size = Vector2i(512, 512)
+
+[node name="Camera3D" type="Camera3D" parent="SubViewport"]
+cull_mask = 1048573
+current = true

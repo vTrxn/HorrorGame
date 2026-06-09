@@ -3,14 +3,14 @@
 [ext_resource type="Script" path="res://DownloadBox.gd" id="1_script"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_down"]
-size = Vector3(1, 1, 1)
+size = Vector3(3, 3, 3)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_down"]
 albedo_color = Color(0, 0, 1, 0.5)
 
 [sub_resource type="BoxMesh" id="BoxMesh_down"]
 material = SubResource("StandardMaterial3D_down")
-size = Vector3(1, 1, 1)
+size = Vector3(3, 3, 3)
 
 [node name="DownloadBox" type="StaticBody3D" groups=["download_tasks"]]
 collision_layer = 1

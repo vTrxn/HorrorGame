@@ -1,0 +1,66 @@
+[gd_scene load_steps=2 format=3 uid="uid://sec_cams_ui"]
+
+[ext_resource type="Script" path="res://SecurityCamerasUI.gd" id="1_script"]
+
+[node name="SecurityCamerasUI" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_script")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.1, 0.9)
+
+[node name="GridContainer" type="GridContainer" parent="ColorRect"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -300.0
+offset_right = 400.0
+offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
+columns = 2
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 20
+
+[node name="Cam1" type="TextureRect" parent="ColorRect/GridContainer"]
+custom_minimum_size = Vector2(390, 290)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Cam2" type="TextureRect" parent="ColorRect/GridContainer"]
+custom_minimum_size = Vector2(390, 290)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Cam3" type="TextureRect" parent="ColorRect/GridContainer"]
+custom_minimum_size = Vector2(390, 290)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Cam4" type="TextureRect" parent="ColorRect/GridContainer"]
+custom_minimum_size = Vector2(390, 290)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CloseButton" type="Button" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -150.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 60.0
+grow_horizontal = 0
+text = "Cerrar"

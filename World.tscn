@@ -6,22 +6,20 @@
 [ext_resource type="PackedScene" uid="uid://ventbox" path="res://Vent.tscn" id="6_kva58"]
 [ext_resource type="PackedScene" uid="uid://pauseuid" path="res://PauseMenu.tscn" id="7_pause"]
 [ext_resource type="PackedScene" uid="uid://dvw7lp7ckje5n" path="res://FixLightsBox.tscn" id="7_wygdx"]
+[ext_resource type="PackedScene" path="res://SecurityMonitorBox.tscn" id="8_ee7l0"]
 [ext_resource type="PackedScene" path="res://DownloadBox.tscn" id="8_fv4w7"]
 [ext_resource type="PackedScene" path="res://UploadBox.tscn" id="9_fvag4"]
-[ext_resource type="PackedScene" uid="uid://survivoruid" path="res://Survivor.tscn" id="9_survivor"]
 [ext_resource type="PackedScene" uid="uid://circuitbox" path="res://CircuitBox.tscn" id="10_fvag4"]
+[ext_resource type="PackedScene" path="res://SecurityCamera.tscn" id="13_b2ar6"]
 [ext_resource type="PackedScene" uid="uid://8pagla7jrkno" path="res://Map.glb" id="17_map"]
 
 [node name="World" type="Node3D" unique_id=1003520969]
 script = ExtResource("1_world")
 
 [node name="SpawnLocation" type="Marker3D" parent="." unique_id=999888777]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.284251, 3.3462539, 15.710476)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -92.34685, 3.3462548, 46.659145)
 
 [node name="Players" type="Node3D" parent="." unique_id=322733036]
-
-[node name="TestDummy" parent="Players" unique_id=1181165332 instance=ExtResource("9_survivor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 33.099586, 8.3006, -68.864555)
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=94462776]
 _spawnable_scenes = PackedStringArray("uid://survivoruid", "uid://beastuid")
@@ -31,7 +29,7 @@ spawn_path = NodePath("../Players")
 use_collision = true
 
 [node name="Map" parent="Environment" unique_id=2088655835 instance=ExtResource("17_map")]
-transform = Transform3D(25, 0, 0, 0, 25, 0, 0, 0, 25, -135.38141, 1.7978067, 109.81575)
+transform = Transform3D(25, 0, 0, 0, 25, 0, 0, 0, 25, -135.59549, 1.7978067, 109.72882)
 
 [node name="DownloadBox" parent="Environment" unique_id=213251897 instance=ExtResource("8_fv4w7")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.0716057, 3.703802, -0.41813785)
@@ -53,6 +51,24 @@ connected_vents = Array[String](["A", "C"])
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.328243, 1.9936676, 48.69938)
 vent_id = "C"
 connected_vents = Array[String](["A", "B"])
+
+[node name="Vent4" parent="Environment" unique_id=1279822897 instance=ExtResource("6_kva58")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -63.707233, 2.0367408, 41.761486)
+vent_id = "2"
+connected_vents = Array[String](["1", "3"])
+
+[node name="Vent5" parent="Environment" unique_id=1187479094 instance=ExtResource("6_kva58")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -72.38959, 1.9100823, 51.971016)
+vent_id = "3"
+connected_vents = Array[String](["1", "2"])
+
+[node name="SecurityMonitorBox" parent="Environment" unique_id=1169477506 instance=ExtResource("8_ee7l0")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -74.90243, 4.25424, 31.523743)
+connected_cameras = Array[String](["Navigation", "Card Room", "Security", "Med bay"])
+
+[node name="SecurityCamera" parent="Environment" unique_id=1035147613 instance=ExtResource("13_b2ar6")]
+transform = Transform3D(0.6984153, 0, 0.71569276, 0, 1, 0, -0.71569276, 0, 0.6984153, 43.802437, 4.7313533, 53.29411)
+camera_id = "Navigation"
 
 [node name="Lighting" type="DirectionalLight3D" parent="." unique_id=178378341]
 transform = Transform3D(0.7071068, -0.49999994, 0.5000001, 0, 0.70710695, 0.7071067, -0.7071068, -0.49999994, 0.5000001, -25.420511, 31.142859, 19.222666)
@@ -82,7 +98,7 @@ transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 46.369404, -0.24617267, -46.6
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 51.67837, 4.3179393, 39.12078)
 
 [node name="EmergencyButton" parent="." unique_id=920906882 instance=ExtResource("4_p1v5b")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.114567, 1.7384143, 15.907066)
+transform = Transform3D(1, 0, 0, 0, 0.9998477, -0.017452406, 0, 0.017452406, 0.9998477, -18.362076, 3.0469303, 16.062456)
 
 [node name="FixLightsBox" parent="." unique_id=1147010668 instance=ExtResource("7_wygdx")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -61.05481, 3.3079112, 70.544655)
@@ -123,3 +139,23 @@ connected_vents = Array[String](["O"])
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60.735123, 1.9632516, 34.12636)
 vent_id = "O"
 connected_vents = Array[String](["I"])
+
+[node name="Vent3" parent="." unique_id=1694144863 instance=ExtResource("6_kva58")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -59.51375, 1.5845742, 57.42251)
+vent_id = "1"
+connected_vents = Array[String](["2", "3"])
+
+[node name="SecurityCamera" parent="." unique_id=1504553568 instance=ExtResource("13_b2ar6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40.58302, 2.3588877, 42.47637)
+
+[node name="SecurityCamera2" parent="." unique_id=1952077374 instance=ExtResource("13_b2ar6")]
+transform = Transform3D(-0.26387313, 0, 0.9645574, 0, 1, 0, -0.9645574, 0, -0.26387313, -0.8934312, 4.062785, 49.79678)
+camera_id = "Card Room"
+
+[node name="SecurityCamera3" parent="." unique_id=1586098089 instance=ExtResource("13_b2ar6")]
+transform = Transform3D(0.82609826, 0, -0.5635261, 0, 1, 0, 0.5635261, 0, 0.82609826, -97.04739, 4.425063, 53.758602)
+camera_id = "Security"
+
+[node name="SecurityCamera4" parent="." unique_id=499320515 instance=ExtResource("13_b2ar6")]
+transform = Transform3D(-0.31895927, 0, 0.94776845, 0, 1, 0, -0.94776845, 0, -0.31895927, -45.71291, 4.3442254, 11.633842)
+camera_id = "Med bay"

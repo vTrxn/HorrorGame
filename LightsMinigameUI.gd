@@ -8,6 +8,13 @@ var switches = [false, false, false, false, false]
 func _ready():
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	
+	var p_style = StyleBoxFlat.new()
+	p_style.bg_color = Color(0.08, 0.08, 0.12, 0.95)
+	p_style.set_corner_radius_all(15)
+	p_style.set_border_width_all(3)
+	p_style.border_color = Color(0.2, 0.6, 0.8, 0.6)
+	$Panel.add_theme_stylebox_override("panel", p_style)
+	
 	for i in range(5):
 		var btn = get_node("Panel/VBoxContainer/HBoxContainer/Switch" + str(i))
 		btn.pressed.connect(Callable(self, "_on_switch_pressed").bind(i))

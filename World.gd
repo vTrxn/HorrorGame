@@ -27,20 +27,31 @@ func _ready():
 		
 	# Para pruebas locales si ejecutamos la escena World directo
 	if get_tree().current_scene == self:
-		var test_player = beast_scene.instantiate()
-		test_player.name = "1"
-		$Players.add_child(test_player)
-		test_player.set_multiplayer_authority(multiplayer.get_unique_id())
-		test_player.global_position = $SpawnLocation.global_position
+		if not $Players.has_node("1"):
+			var test_player = beast_scene.instantiate()
+			test_player.name = "1"
+			$Players.add_child(test_player)
+			test_player.set_multiplayer_authority(multiplayer.get_unique_id())
+			test_player.global_position = $SpawnLocation.global_position
 		
+	if multiplayer.is_server():
 		var test_dummy = survivor_scene.instantiate()
-		test_dummy.name = "TestDummy"
-		add_child(test_dummy)
-		test_dummy.global_position = $SpawnLocation.global_position + Vector3(0, 0, -2)
+		test_dummy.name = "TestDummy1"
+		$Players.add_child(test_dummy)
+		test_dummy.global_position = $SpawnLocation.global_position + Vector3(-1, 0, -2)
 		test_dummy.rotation.y = PI
-		test_dummy.set_multiplayer_authority(9999)
+		test_dummy.set_multiplayer_authority(1)
 		if test_dummy.has_method("set_player_color"):
 			test_dummy.set_player_color(1)
+			
+		var test_dummy2 = survivor_scene.instantiate()
+		test_dummy2.name = "TestDummy2"
+		$Players.add_child(test_dummy2)
+		test_dummy2.global_position = $SpawnLocation.global_position + Vector3(1, 0, -2)
+		test_dummy2.rotation.y = PI
+		test_dummy2.set_multiplayer_authority(1)
+		if test_dummy2.has_method("set_player_color"):
+			test_dummy2.set_player_color(2)
 	
 
 	total_boxes = _count_tasks(self)
@@ -184,12 +195,17 @@ func _count_tasks(node: Node) -> int:
 var meeting_ui_instance = null
 
 @rpc("any_peer", "call_local", "reliable")
+func report_corpse(caller_id: String):
+	if not multiplayer.is_server(): return
+	open_meeting.rpc("report")
+
+@rpc("any_peer", "call_local", "reliable")
 func call_meeting(caller_id: String):
 	if not multiplayer.is_server(): return
-	open_meeting.rpc()
+	open_meeting.rpc("button")
 
 @rpc("call_local", "reliable")
-func open_meeting():
+func open_meeting(reason: String = "button"):
 	var spawn_pos = $SpawnLocation.global_position
 	for p in $Players.get_children():
 		if p.has_method("is_local_player") and p.is_local_player():
@@ -197,9 +213,13 @@ func open_meeting():
 		if not ("is_ghost" in p and p.is_ghost):
 			p.global_position = Vector3(spawn_pos.x + randf_range(-2, 2), spawn_pos.y + 1, spawn_pos.z + randf_range(-2, 2))
 	
+	for c in get_tree().get_nodes_in_group("corpses"):
+		c.queue_free()
+		
 	if meeting_ui_instance == null:
 		var MeetingUI = load("res://MeetingUI.gd")
 		meeting_ui_instance = MeetingUI.new()
+		meeting_ui_instance.set_meta("reason", reason)
 		add_child(meeting_ui_instance)
 
 @rpc("any_peer", "call_local", "reliable")

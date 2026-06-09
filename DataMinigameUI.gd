@@ -21,6 +21,31 @@ func _ready():
 	$Panel/VBoxContainer/ProgressBar.value = 0
 	$Panel/VBoxContainer/StartButton.pressed.connect(Callable(self, "_on_start_pressed"))
 	$Panel/VBoxContainer/CloseButton.pressed.connect(Callable(self, "_on_close_pressed"))
+	
+	var p_style = StyleBoxFlat.new()
+	p_style.bg_color = Color(0.08, 0.08, 0.12, 0.95)
+	p_style.set_corner_radius_all(15)
+	p_style.set_border_width_all(3)
+	p_style.border_color = Color(0.2, 0.6, 0.8, 0.6)
+	$Panel.add_theme_stylebox_override("panel", p_style)
+	
+	var title = $Panel/VBoxContainer/Title
+	title.add_theme_font_size_override("font_size", 28)
+	title.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+	
+	var btn_style = StyleBoxFlat.new()
+	btn_style.bg_color = Color(0.15, 0.15, 0.2)
+	btn_style.set_corner_radius_all(8)
+	btn_style.set_border_width_all(1)
+	btn_style.border_color = Color(0.4, 0.4, 0.5)
+	
+	var h_style = btn_style.duplicate()
+	h_style.bg_color = Color(0.2, 0.4, 0.5)
+	
+	for btn in [$Panel/VBoxContainer/StartButton, $Panel/VBoxContainer/CloseButton]:
+		btn.add_theme_stylebox_override("normal", btn_style)
+		btn.add_theme_stylebox_override("hover", h_style)
+		btn.add_theme_font_size_override("font_size", 18)
 
 func _process(delta):
 	if downloading:

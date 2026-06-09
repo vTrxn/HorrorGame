@@ -465,8 +465,8 @@ func _physics_process(delta):
 	if not is_on_floor():
 		velocity.y -= gravity * delta
 	else:
-		if not is_beast and is_local_player() and not in_minigame and Input.is_action_just_pressed("ui_accept"):
-			velocity.y = 4.5
+		if is_local_player() and not in_minigame and Input.is_action_just_pressed("ui_accept"):
+			velocity.y = JUMP_VELOCITY
 
 	# Fallback si se caen del mapa
 	if global_position.y < -50:
@@ -494,9 +494,10 @@ func _physics_process(delta):
 			current_speed *= 0.5
 		else:
 			if input_dir.length() > 0:
-				if Input.is_key_pressed(KEY_SHIFT) and stamina > 0:
+				if Input.is_key_pressed(KEY_SHIFT) and (stamina > 0 or is_ghost):
 					current_speed *= 1.5
-					stamina -= delta * 25.0
+					if not is_ghost:
+						stamina -= delta * 25.0
 				else:
 					stamina += delta * 7.5
 			else:
@@ -636,11 +637,21 @@ func _physics_process(delta):
 			e_action = "E: Detener Acción"
 		elif raycast.is_colliding():
 			var target = raycast.get_collider()
-			if is_beast:
+			if target.is_in_group("corpses"):
+				e_action = "E: Reportar Cuerpo"
+				if interact_just_pressed and not is_hacking and not in_minigame:
+					get_tree().current_scene.report_corpse.rpc_id(1, str(multiplayer.get_unique_id()))
+					if is_beast: beast_handled_interact = true
+			elif target.is_in_group("security_monitors") or "SecurityMonitor" in target.name:
+				e_action = "E: Ver Cámaras"
+				if interact_just_pressed and not is_hacking and not in_minigame:
+					start_security_cameras(target)
+					if is_beast: beast_handled_interact = true
+			elif is_beast:
 				if target.is_in_group("fix_lights"):
 					e_action = "E para arreglar luces"
-					if interact_just_pressed and not is_hacking:
-						target.start_hack.rpc_id(1, is_beast)
+					if interact_just_pressed and not is_hacking and not in_minigame:
+						start_lights_minigame(target)
 						beast_handled_interact = true
 				elif "Vent" in target.name or target.is_in_group("vents"):
 					e_action = "E: Entrar a Tubería"
@@ -721,6 +732,9 @@ func _physics_process(delta):
 		if is_beast and sabotage_cooldown > 0:
 			e_action += "\nLuces (F): " + str(int(sabotage_cooldown)) + "s"
 			
+		if is_beast and kill_cooldown > 0:
+			e_action += "\nAsesinato (Click Izq): " + str(int(kill_cooldown)) + "s"
+			
 		if e_action != "":
 			controls_text += "\n" + e_action
 			if interact_label:
@@ -736,6 +750,9 @@ func _physics_process(delta):
 
 	if is_beast and sabotage_cooldown > 0:
 		sabotage_cooldown -= delta
+		
+	if is_beast and kill_cooldown > 0:
+		kill_cooldown -= delta
 		
 	if is_hacking and h_vel.length() > 0.1:
 		if current_hack_target:
@@ -807,9 +824,15 @@ func do_attack():
 @rpc("any_peer", "call_local")
 func get_knocked_out():
 	is_knocked_out = true
-	# rotation_degrees.z = 90  # Ya no lo rotamos físicamente, usamos la animación
-	play_animation("up") # la animación de levantarse o "die" según lo configurado en _get_anim_name
-	_play_anim_sync("die") # Forzamos el pause en 0 para morir
+	
+	var CorpseScene = load("res://Corpse.tscn")
+	var c = CorpseScene.instantiate()
+	c.dead_player_name = name
+	c.corpse_color_index = player_color_index
+	c.global_position = global_position
+	get_tree().root.get_node("World").add_child(c)
+	
+	make_ghost()
 	
 	var kill_audio = AudioStreamPlayer3D.new()
 	var stream = load("res://kill_sound.mp3")
@@ -913,9 +936,12 @@ func _on_lights_completed(target_box):
 	in_minigame = false
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	if target_box:
-		target_box.is_completed = true
+		if "is_completed" in target_box:
+			target_box.is_completed = true
 		var world = get_tree().root.get_node_or_null("World")
-		if world and world.has_method("box_fixed"):
+		if target_box.is_in_group("fix_lights") or "FixLightsBox" in target_box.name:
+			target_box.start_hack.rpc_id(1, is_beast)
+		elif world and world.has_method("box_fixed"):
 			if multiplayer.is_server():
 				world.box_fixed()
 			else:
@@ -999,6 +1025,29 @@ func _on_data_closed():
 	in_minigame = false
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
+func start_security_cameras(monitor):
+	in_minigame = true
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	var ui = load("res://SecurityCamerasUI.tscn").instantiate()
+	ui.setup(monitor.connected_cameras)
+	
+	var all_cams = get_tree().get_nodes_in_group("security_cameras")
+	for c in all_cams:
+		if c.camera_id in monitor.connected_cameras:
+			c.set_active.rpc(true)
+			
+	ui.connect("minigame_closed", Callable(self, "_on_security_cameras_closed").bind(monitor.connected_cameras))
+	get_tree().root.add_child(ui)
+
+func _on_security_cameras_closed(cam_ids):
+	in_minigame = false
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	
+	var all_cams = get_tree().get_nodes_in_group("security_cameras")
+	for c in all_cams:
+		if c.camera_id in cam_ids:
+			c.set_active.rpc(false)
+
 func update_task_ui(fixed: int, total: int):
 	if global_task_bar:
 		if total > 0:
@@ -1018,6 +1067,18 @@ func make_ghost():
 		if head_mesh: _make_transparent(head_mesh)
 		if hand_l: _make_transparent(hand_l)
 		if hand_r: _make_transparent(hand_r)
+		
+		if not has_flashlight:
+			has_flashlight = true
+			flashlight = SpotLight3D.new()
+			flashlight.name = "Flashlight"
+			camera.add_child(flashlight)
+		
+		flashlight.light_color = Color(1.0, 1.0, 1.0, 1)
+		flashlight.light_energy = 15.0
+		flashlight.spot_range = 50.0
+		flashlight.spot_angle = 60.0
+		flashlight.shadow_enabled = false
 
 func _make_transparent(node: Node):
 	if node is MeshInstance3D:

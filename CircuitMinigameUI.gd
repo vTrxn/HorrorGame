@@ -15,7 +15,15 @@ func _draw():
 	var center = size / 2.0
 	
 	# Fondo
-	draw_rect(Rect2(center.x - 300, center.y - 150, 600, 300), Color(0.15, 0.15, 0.15), true)
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.08, 0.08, 0.12, 0.95)
+	style.set_corner_radius_all(15)
+	style.set_border_width_all(3)
+	style.border_color = Color(0.2, 0.6, 0.8, 0.6)
+	draw_style_box(style, Rect2(center.x - 300, center.y - 150, 600, 300))
+	
+	var font = ThemeDB.fallback_font
+	draw_string(font, Vector2(center.x - 280, center.y - 110), "CONEXIÓN DE CIRCUITO PRINCIPAL", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color(0.8, 0.8, 0.8))
 	
 	# Cables base
 	draw_line(Vector2(center.x - 300, center.y), Vector2(center.x - 50, center.y), Color.YELLOW, 15, true)
